@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "960734911672",
+    "project_id": "vertsstore-bc3c7",
+    "storage_bucket": "vertsstore-bc3c7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:960734911672:android:f6dabdb8ca1748325a284d",
+        "android_client_info": {
+          "package_name": "com.example.flutter_application_1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDCnLwnprtBOkkkZOw1Ydmc0M4L3zUVeUQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:960734911672:android:d70bcac882d1d7905a284d",
+        "android_client_info": {
+          "package_name": "com.example.verts"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDCnLwnprtBOkkkZOw1Ydmc0M4L3zUVeUQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
