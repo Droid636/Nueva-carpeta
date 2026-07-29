@@ -98,44 +98,44 @@ class HomePage extends StatelessWidget {
                   const SizedBox(height: 35),
 
                   /// Tarjeta
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(25),
-                      border: Border.all(color: Colors.white24),
-                    ),
-                    child: Column(
-                      children: [
-                        const Icon(
-                          Icons.email_outlined,
-                          color: Colors.white,
-                          size: 45,
-                        ),
-
-                        const SizedBox(height: 15),
-
-                        const Text(
-                          "Correo electrónico",
-                          style: TextStyle(color: Colors.white70),
-                        ),
-
-                        const SizedBox(height: 10),
-
-                        Text(
-                          email,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                  SizedBox(
+                    height: 170,
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          _buildMenuCard(
+                            context,
+                            icon: Icons.inventory_2_outlined,
+                            titulo: "Inventario",
+                            route: "/inventario",
+                            color: const Color(0xFF00D9FF),
                           ),
-                        ),
-                      ],
+
+                          const SizedBox(width: 15),
+                          _buildMenuCard(
+                            context,
+                            icon: Icons.shopping_cart_outlined,
+                            titulo: "Ventas",
+                            route: "/ventas",
+                            color: const Color(0xFF2575FC),
+                          ),
+
+                          const SizedBox(width: 15),
+
+                          _buildMenuCard(
+                            context,
+                            icon: Icons.attach_money_rounded,
+                            titulo: "Ganancias",
+                            route: "/ganancias",
+                            color: const Color(0xFF7B2CFF),
+                          ),
+
+                          const SizedBox(width: 15),
+                        ],
+                      ),
                     ),
                   ),
-
                   const Spacer(),
 
                   SizedBox(
@@ -186,4 +186,48 @@ class HomePage extends StatelessWidget {
       ),
     );
   }
+}
+
+Widget _buildMenuCard(
+  BuildContext context, {
+  required IconData icon,
+  required String titulo,
+  required Color color,
+  required String route,
+}) {
+  return InkWell(
+    borderRadius: BorderRadius.circular(22),
+    onTap: () {
+      Navigator.pushNamed(context, route);
+    },
+    child: Container(
+      width: 120,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: Colors.white24),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircleAvatar(
+            radius: 28,
+            backgroundColor: color.withValues(alpha: 0.15),
+            child: Icon(icon, color: color, size: 30),
+          ),
+
+          const SizedBox(height: 12),
+
+          Text(
+            titulo,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }
