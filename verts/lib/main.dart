@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:verts/app/home.dart';
 import 'package:verts/app/register.dart';
+import 'package:verts/app/screens/DIse%C3%B1os.dart';
 import 'package:verts/firebase_options.dart';
 import 'app/onboarding.dart';
 import 'app/login.dart';
@@ -52,6 +53,7 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
         '/home': (context) => const HomePage(),
+        '/disenos': (context) => const DisenosPage(),
       },
     );
   }

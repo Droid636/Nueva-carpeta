@@ -99,7 +99,7 @@ class HomePage extends StatelessWidget {
 
                   /// Tarjeta
                   SizedBox(
-                    height: 170,
+                    height: 200,
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Row(
@@ -132,6 +132,14 @@ class HomePage extends StatelessWidget {
                           ),
 
                           const SizedBox(width: 15),
+
+                          _buildMenuCard(
+                            context,
+                            titulo: "Diseños",
+                            icon: Icons.design_services_outlined,
+                            route: "/disenos",
+                            color: const Color(0xFF00D9FF),
+                          ),
                         ],
                       ),
                     ),
