@@ -3,9 +3,38 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:verts/services/design_service.dart';
+import 'package:carousel_slider/carousel_slider.dart';
+import 'package:verts/app/models/design_model.dart';
 
-class DisenosPage extends StatelessWidget {
+class DisenosPage extends StatefulWidget {
   const DisenosPage({super.key});
+
+  @override
+  State<DisenosPage> createState() => _DisenosPageState();
+}
+
+class _DisenosPageState extends State<DisenosPage> {
+  List<DesignModel> _designs = [];
+  final DesignService _designService = DesignService();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDesigns();
+  }
+
+  Future<void> _loadDesigns() async {
+    try {
+      final designs = await _designService.getDesigns();
+      setState(() {
+        _designs = designs;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error al cargar diseños: $e')));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,6 +68,111 @@ class DisenosPage extends StatelessWidget {
 
                 const Spacer(),
 
+                SizedBox(
+                  height: 300,
+                  child: _designs.isEmpty
+                      ? const Center(
+                          child: Text(
+                            'No hay diseños disponibles',
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                        )
+                      : CarouselSlider.builder(
+                          itemCount: _designs.length,
+                          itemBuilder: (context, index, realIndex) {
+                            final design = _designs[index];
+                            return Card(
+                              color: Colors.white10,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              child: Column(
+                                children: [
+                                  Expanded(
+                                    child: ClipRRect(
+                                      borderRadius: const BorderRadius.vertical(
+                                        top: Radius.circular(15),
+                                      ),
+                                      child: Image.network(
+                                        design.imagen,
+                                        fit: BoxFit.cover,
+                                        width: double.infinity,
+                                      ),
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Text(
+                                      design.nombre,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 4.0,
+                                    ),
+                                    child: Text(
+                                      design.disponible
+                                          ? 'Disponible'
+                                          : 'No disponible',
+                                      style: TextStyle(
+                                        color: design.disponible
+                                            ? Colors.greenAccent
+                                            : Colors.redAccent,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ),
+                                  ElevatedButton.icon(
+                                    onPressed: () async {
+                                      try {
+                                        await _designService.deleteDesign(
+                                          design.id,
+                                        );
+                                        await _loadDesigns();
+
+                                        if (!context.mounted) return;
+
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Diseño eliminado correctamente',
+                                            ),
+                                          ),
+                                        );
+                                      } catch (e) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(content: Text(e.toString())),
+                                        );
+                                      }
+                                    },
+                                    icon: const Icon(Icons.delete),
+                                    label: const Text('Eliminar'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                          options: CarouselOptions(
+                            height: 300,
+                            enlargeCenterPage: true,
+                            autoPlay: true,
+                            autoPlayInterval: const Duration(seconds: 3),
+                          ),
+                        ),
+                ),
+                Spacer(),
                 SizedBox(
                   width: double.infinity,
                   height: 55,
