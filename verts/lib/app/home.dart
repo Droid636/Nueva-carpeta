@@ -104,33 +104,32 @@ class HomePage extends StatelessWidget {
                       scrollDirection: Axis.horizontal,
                       child: Row(
                         children: [
-                          _buildMenuCard(
-                            context,
-                            icon: Icons.inventory_2_outlined,
-                            titulo: "Inventario",
-                            route: "/inventario",
-                            color: const Color(0xFF00D9FF),
-                          ),
+                          //_buildMenuCard(
+                          //context,
+                          //icon: Icons.inventory_2_outlined,
+                          //titulo: "Inventario",
+                          //route: "/inventario",
+                          //color: const Color(0xFF00D9FF),
+                          //),
 
-                          const SizedBox(width: 15),
-                          _buildMenuCard(
-                            context,
-                            icon: Icons.shopping_cart_outlined,
-                            titulo: "Ventas",
-                            route: "/ventas",
-                            color: const Color(0xFF2575FC),
-                          ),
+                          // const SizedBox(width: 15),
+                          //_buildMenuCard(
+                          // context,
+                          //icon: Icons.shopping_cart_outlined,
+                          //titulo: "Ventas",
+                          //route: "/ventas",
+                          //color: const Color(0xFF2575FC),
+                          //),
 
-                          const SizedBox(width: 15),
+                          // const SizedBox(width: 15),
 
-                          _buildMenuCard(
-                            context,
-                            icon: Icons.attach_money_rounded,
-                            titulo: "Ganancias",
-                            route: "/ganancias",
-                            color: const Color(0xFF7B2CFF),
-                          ),
-
+                          // _buildMenuCard(
+                          //   context,
+                          //   icon: Icons.attach_money_rounded,
+                          //   titulo: "Ganancias",
+                          //   route: "/ganancias",
+                          //   color: const Color(0xFF7B2CFF),
+                          //),
                           const SizedBox(width: 15),
 
                           _buildMenuCard(
