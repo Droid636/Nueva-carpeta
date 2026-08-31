@@ -1,0 +1,451 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+
+import '../../services/design_service.dart';
+import '../models/design_model.dart';
+
+class VentaModel {
+  final String id;
+  final String designId;
+  final String nombreDiseno;
+  final String cliente;
+  final double precioVenta;
+  final DateTime fecha;
+
+  VentaModel({
+    required this.id,
+    required this.designId,
+    required this.nombreDiseno,
+    required this.cliente,
+    required this.precioVenta,
+    required this.fecha,
+  });
+
+  factory VentaModel.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data() ?? {};
+
+    return VentaModel(
+      id: doc.id,
+      designId: data['designId'] ?? '',
+      nombreDiseno: data['nombreDiseno'] ?? '',
+      cliente: data['cliente'] ?? '',
+      precioVenta: (data['precioVenta'] ?? 0).toDouble(),
+      fecha: (data['fecha'] as Timestamp?)?.toDate() ?? DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'designId': designId,
+      'nombreDiseno': nombreDiseno,
+      'cliente': cliente,
+      'precioVenta': precioVenta,
+      'fecha': Timestamp.fromDate(fecha),
+    };
+  }
+}
+
+class VentasPage extends StatefulWidget {
+  const VentasPage({super.key});
+
+  @override
+  State<VentasPage> createState() => _VentasPageState();
+}
+
+class _VentasPageState extends State<VentasPage> {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final TextEditingController _clienteController = TextEditingController();
+  final TextEditingController _precioController = TextEditingController();
+
+  List<DesignModel> _designs = [];
+  List<VentaModel> _ventas = [];
+  bool _loading = true;
+  bool _hasError = false;
+  String _errorMessage = '';
+  String? _selectedDesignId;
+  DateTime _fechaVenta = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarDatos();
+  }
+
+  Future<void> _cargarDatos() async {
+    try {
+      final designsSnapshot = await FirebaseFirestore.instance
+          .collection('disenos')
+          .get();
+
+      final designs = designsSnapshot.docs
+          .map((doc) => DesignModel.fromFirestore(doc))
+          .toList();
+
+      final ventasSnapshot = await FirebaseFirestore.instance
+          .collection('ventas')
+          .orderBy('fecha', descending: true)
+          .get();
+
+      final ventas = ventasSnapshot.docs
+          .map((doc) => VentaModel.fromFirestore(doc))
+          .toList();
+
+      if (!mounted) return;
+
+      setState(() {
+        _designs = designs;
+        _ventas = ventas;
+        _loading = false;
+        _hasError = false;
+        _errorMessage = '';
+
+        if (_designs.isNotEmpty &&
+            (_selectedDesignId == null ||
+                !_designs.any((design) => design.id == _selectedDesignId))) {
+          _selectedDesignId = _designs.first.id;
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _loading = false;
+        _hasError = true;
+        _errorMessage = 'No se pudieron cargar los datos: $e';
+      });
+    }
+  }
+
+  double get _gananciaMesActual {
+    final now = DateTime.now();
+    return _ventas
+        .where(
+          (venta) =>
+              venta.fecha.year == now.year && venta.fecha.month == now.month,
+        )
+        .fold<double>(0, (sum, venta) => sum + venta.precioVenta);
+  }
+
+  Future<void> _guardarVenta() async {
+    final cliente = _clienteController.text.trim();
+    final precio = double.tryParse(_precioController.text.trim()) ?? 0;
+    final designSeleccionado = _designs.firstWhere(
+      (design) => design.id == _selectedDesignId,
+      orElse: () => _designs.first,
+    );
+
+    if (_selectedDesignId == null || cliente.isEmpty || precio <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Completa cliente, diseño y precio válido'),
+        ),
+      );
+      return;
+    }
+
+    final venta = VentaModel(
+      id: '',
+      designId: designSeleccionado.id,
+      nombreDiseno: designSeleccionado.nombre,
+      cliente: cliente,
+      precioVenta: precio,
+      fecha: _fechaVenta,
+    );
+
+    await _firestore.collection('ventas').add(venta.toMap());
+
+    _clienteController.clear();
+    _precioController.clear();
+    _fechaVenta = DateTime.now();
+
+    await _cargarDatos();
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Venta registrada correctamente')),
+    );
+  }
+
+  @override
+  void dispose() {
+    _clienteController.dispose();
+    _precioController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0B1020),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: const Text(
+          'VENTAS',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 2,
+          ),
+        ),
+      ),
+      body: _loading
+          ? const Center(
+              child: CircularProgressIndicator(color: Color(0xFF00D9FF)),
+            )
+          : _hasError
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  _errorMessage,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.redAccent),
+                ),
+              ),
+            )
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF00D9FF), Color(0xFF2575FC)],
+                      ),
+                      borderRadius: BorderRadius.circular(22),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Ganancias del mes',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '\$${_gananciaMesActual.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Registrar venta',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: _selectedDesignId,
+                    dropdownColor: const Color(0xFF111827),
+                    decoration: InputDecoration(
+                      labelText: 'Diseño vendido',
+                      labelStyle: const TextStyle(color: Colors.white70),
+                      filled: true,
+                      fillColor: Colors.white10,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    style: const TextStyle(color: Colors.white),
+                    items: _designs.map((design) {
+                      return DropdownMenuItem<String>(
+                        value: design.id,
+                        child: Text(design.nombre),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedDesignId = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _clienteController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      labelText: 'Cliente',
+                      labelStyle: const TextStyle(color: Colors.white70),
+                      filled: true,
+                      fillColor: Colors.white10,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _precioController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      labelText: 'Precio de venta',
+                      prefixText: '\$ ',
+                      labelStyle: const TextStyle(color: Colors.white70),
+                      filled: true,
+                      fillColor: Colors.white10,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ListTile(
+                    tileColor: Colors.white10,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    title: const Text(
+                      'Fecha de venta',
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                    subtitle: Text(
+                      DateFormat('dd/MM/yyyy').format(_fechaVenta),
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                    trailing: const Icon(
+                      Icons.calendar_today,
+                      color: Colors.white,
+                    ),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: _fechaVenta,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2100),
+                      );
+
+                      if (picked != null) {
+                        setState(() {
+                          _fechaVenta = picked;
+                        });
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _guardarVenta,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF2575FC),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      icon: const Icon(Icons.sell_rounded, color: Colors.white),
+                      label: const Text(
+                        'Guardar venta',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                  const Text(
+                    'Ventas recientes',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  if (_ventas.isEmpty)
+                    const Center(
+                      child: Text(
+                        'Aún no hay ventas registradas',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                    )
+                  else
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _ventas.length,
+                      itemBuilder: (context, index) {
+                        final venta = _ventas[index];
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: Colors.white10,
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      venta.nombreDiseno,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Cliente: ${venta.cliente}',
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      DateFormat(
+                                        'dd/MM/yyyy',
+                                      ).format(venta.fecha),
+                                      style: const TextStyle(
+                                        color: Colors.white54,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Text(
+                                '\$${venta.precioVenta.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  color: Color(0xFF00D9FF),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                ],
+              ),
+            ),
+    );
+  }
+}
