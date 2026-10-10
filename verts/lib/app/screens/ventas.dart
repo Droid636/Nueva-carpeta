@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../services/design_service.dart';
 import '../models/design_model.dart';
 
 class VentaModel {
@@ -12,6 +12,7 @@ class VentaModel {
   final String cliente;
   final double precioVenta;
   final DateTime fecha;
+  final String uid;
 
   VentaModel({
     required this.id,
@@ -20,6 +21,7 @@ class VentaModel {
     required this.cliente,
     required this.precioVenta,
     required this.fecha,
+    required this.uid,
   });
 
   factory VentaModel.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -32,6 +34,7 @@ class VentaModel {
       cliente: data['cliente'] ?? '',
       precioVenta: (data['precioVenta'] ?? 0).toDouble(),
       fecha: (data['fecha'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      uid: data['uid'] ?? '',
     );
   }
 
@@ -42,6 +45,7 @@ class VentaModel {
       'cliente': cliente,
       'precioVenta': precioVenta,
       'fecha': Timestamp.fromDate(fecha),
+      'uid': uid,
     };
   }
 }
@@ -55,6 +59,7 @@ class VentasPage extends StatefulWidget {
 
 class _VentasPageState extends State<VentasPage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   final TextEditingController _clienteController = TextEditingController();
   final TextEditingController _precioController = TextEditingController();
 
@@ -74,8 +79,16 @@ class _VentasPageState extends State<VentasPage> {
 
   Future<void> _cargarDatos() async {
     try {
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) {
+        if (!mounted) return;
+        Navigator.pushReplacementNamed(context, '/login');
+        return;
+      }
+
       final designsSnapshot = await FirebaseFirestore.instance
           .collection('disenos')
+          .where('uid', isEqualTo: currentUser.uid)
           .get();
 
       final designs = designsSnapshot.docs
@@ -84,6 +97,7 @@ class _VentasPageState extends State<VentasPage> {
 
       final ventasSnapshot = await FirebaseFirestore.instance
           .collection('ventas')
+          .where('uid', isEqualTo: currentUser.uid)
           .orderBy('fecha', descending: true)
           .get();
 
@@ -127,6 +141,49 @@ class _VentasPageState extends State<VentasPage> {
         .fold<double>(0, (sum, venta) => sum + venta.precioVenta);
   }
 
+  Future<void> _eliminarVenta(VentaModel venta) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1a1f3a),
+        title: const Text(
+          'Eliminar venta',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: Text(
+          '¿Estás seguro de que deseas eliminar la venta de ${venta.cliente}?',
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      await _firestore.collection('ventas').doc(venta.id).delete();
+      await _cargarDatos();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Venta eliminada correctamente')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error al eliminar: $e')));
+    }
+  }
+
   Future<void> _guardarVenta() async {
     final cliente = _clienteController.text.trim();
     final precio = double.tryParse(_precioController.text.trim()) ?? 0;
@@ -144,6 +201,14 @@ class _VentasPageState extends State<VentasPage> {
       return;
     }
 
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error: Usuario no autenticado')),
+      );
+      return;
+    }
+
     final venta = VentaModel(
       id: '',
       designId: designSeleccionado.id,
@@ -151,6 +216,7 @@ class _VentasPageState extends State<VentasPage> {
       cliente: cliente,
       precioVenta: precio,
       fecha: _fechaVenta,
+      uid: currentUser.uid,
     );
 
     await _firestore.collection('ventas').add(venta.toMap());
@@ -430,13 +496,42 @@ class _VentasPageState extends State<VentasPage> {
                                   ],
                                 ),
                               ),
-                              Text(
-                                '\$${venta.precioVenta.toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                  color: Color(0xFF00D9FF),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    '\$${venta.precioVenta.toStringAsFixed(2)}',
+                                    style: const TextStyle(
+                                      color: Color(0xFF00D9FF),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  GestureDetector(
+                                    onTap: () => _eliminarVenta(venta),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red.withValues(
+                                          alpha: 0.2,
+                                        ),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Text(
+                                        'Eliminar',
+                                        style: TextStyle(
+                                          color: Colors.red,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),

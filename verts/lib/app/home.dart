@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shimmer/shimmer.dart';
@@ -37,7 +38,15 @@ class _HomePageState extends State<HomePage> {
 
   Future<double> _getMonthlySalesTotal() async {
     final now = DateTime.now();
-    final snapshot = await _firestore.collection('ventas').get();
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
+      return 0;
+    }
+
+    final snapshot = await _firestore
+        .collection('ventas')
+        .where('uid', isEqualTo: currentUser.uid)
+        .get();
 
     double total = 0;
     for (final doc in snapshot.docs) {

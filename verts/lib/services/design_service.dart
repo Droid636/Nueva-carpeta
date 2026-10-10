@@ -1,12 +1,14 @@
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../app/models/design_model.dart';
 
 class DesignService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   /// GUARDAR DISEÑO
   Future<void> saveDesign({
@@ -24,6 +26,11 @@ class DesignService {
 
     final imageUrl = await storageRef.getDownloadURL();
 
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) {
+      throw Exception('Usuario no autenticado');
+    }
+
     final design = DesignModel(
       id: '',
       nombre: nombre,
@@ -31,6 +38,7 @@ class DesignService {
       precio: precio,
       disponible: disponible,
       publicado: publicado,
+      uid: currentUser.uid,
     );
 
     await _firestore.collection('disenos').add(design.toMap());
@@ -38,8 +46,14 @@ class DesignService {
 
   /// OBTENER DISEÑOS
   Stream<List<DesignModel>> getDesigns() {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) {
+      return Stream.value([]);
+    }
+
     return _firestore
         .collection('disenos')
+        .where('uid', isEqualTo: currentUser.uid)
         .orderBy('fecha', descending: true)
         .snapshots()
         .map(

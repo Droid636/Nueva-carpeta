@@ -8,6 +8,7 @@ class DesignModel {
   final bool disponible;
   final bool publicado;
   final DateTime? fecha;
+  final String uid;
 
   DesignModel({
     required this.id,
@@ -17,6 +18,7 @@ class DesignModel {
     required this.disponible,
     required this.publicado,
     this.fecha,
+    required this.uid,
   });
 
   factory DesignModel.fromFirestore(
@@ -32,6 +34,7 @@ class DesignModel {
       disponible: data['disponible'] ?? true,
       publicado: data['publicado'] ?? true,
       fecha: (data['fecha'] as Timestamp?)?.toDate(),
+      uid: data['uid'] ?? '',
     );
   }
 
@@ -42,6 +45,7 @@ class DesignModel {
       'precio': precio,
       'disponible': disponible,
       'publicado': publicado,
+      'uid': uid,
       'fecha': FieldValue.serverTimestamp(),
     };
   }
