@@ -109,7 +109,7 @@ class _HomePageState extends State<HomePage> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        email.isNotEmpty ? email : 'Usuario',
+                        user?.displayName ?? '',
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
@@ -137,7 +137,7 @@ class _HomePageState extends State<HomePage> {
                 ListTile(
                   leading: const Icon(LucideIcons.sticker, color: Colors.white),
                   title: const Text(
-                    'Ventas de diseños',
+                    'Ventas',
                     style: TextStyle(color: Colors.white),
                   ),
                   onTap: () {
@@ -145,20 +145,21 @@ class _HomePageState extends State<HomePage> {
                     Navigator.pushNamed(context, '/ventas');
                   },
                 ),
+                ListTile(
+                  leading: const Icon(LucideIcons.users, color: Colors.white),
+                  title: const Text(
+                    'Clientes',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(context, '/clientes');
+                  },
+                ),
 
                 const Spacer(),
                 const Divider(color: Colors.white24),
-                ListTile(
-                  leading: const Icon(
-                    Icons.logout_rounded,
-                    color: Colors.white,
-                  ),
-                  title: const Text(
-                    'Cerrar sesión',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  onTap: logout,
-                ),
+
                 ListTile(
                   leading: const Icon(
                     Icons.info_outline_rounded,
@@ -174,8 +175,12 @@ class _HomePageState extends State<HomePage> {
                       builder: (context) {
                         return AlertDialog(
                           backgroundColor: const Color(0xFF121212),
+
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(25),
+                            side: BorderSide(
+                              color: Colors.white.withValues(alpha: 0.18),
+                            ),
                           ),
                           content: Column(
                             mainAxisSize: MainAxisSize.min,
@@ -184,9 +189,9 @@ class _HomePageState extends State<HomePage> {
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(20),
                                 child: Image.asset(
-                                  'assets/images/logo.png',
-                                  width: 100,
-                                  height: 100,
+                                  'assets/images/Verts.png',
+                                  width: 150,
+                                  height: 150,
                                   fit: BoxFit.cover,
                                 ),
                               ),
@@ -195,7 +200,7 @@ class _HomePageState extends State<HomePage> {
 
                               // NOMBRE
                               const Text(
-                                'Vert´s Store',
+                                'Vert´s Design',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 22,
@@ -207,10 +212,10 @@ class _HomePageState extends State<HomePage> {
 
                               // VERSIÓN
                               const Text(
-                                'Versión 1.0.0',
+                                'Versión 1.0.2',
                                 style: TextStyle(
                                   color: Colors.white70,
-                                  fontSize: 14,
+                                  fontSize: 17,
                                 ),
                               ),
                             ],
@@ -219,6 +224,17 @@ class _HomePageState extends State<HomePage> {
                       },
                     );
                   },
+                ),
+                ListTile(
+                  leading: const Icon(
+                    Icons.logout_rounded,
+                    color: Colors.white,
+                  ),
+                  title: const Text(
+                    'Cerrar sesión',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  onTap: logout,
                 ),
               ],
             ),
@@ -258,24 +274,6 @@ class _HomePageState extends State<HomePage> {
                     },
                   ),
                 ),
-                actions: [
-                  Padding(
-                    padding: const EdgeInsets.only(right: 10),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(
-                          Icons.refresh_rounded,
-                          color: Colors.white,
-                        ),
-                        onPressed: _refreshDesigns,
-                      ),
-                    ),
-                  ),
-                ],
               ),
             ),
           ),

@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:verts/app/clientes.dart';
 import 'package:verts/app/home.dart';
 import 'package:verts/app/register.dart';
 import 'package:verts/app/screens/DIse%C3%B1os.dart';
@@ -56,6 +57,7 @@ class MyApp extends StatelessWidget {
         '/home': (context) => const HomePage(),
         '/disenos': (context) => const DisenosPage(),
         '/ventas': (context) => const VentasPage(),
+        '/clientes': (context) => ClientesPage(),
       },
     );
   }
