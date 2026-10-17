@@ -4,7 +4,8 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
 import 'package:shimmer/shimmer.dart';
 import 'package:verts/app/models/design_model.dart';
 import 'package:verts/services/design_service.dart';
@@ -65,12 +66,6 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final auth = AuthService();
-    final user = auth.currentUser;
-
-    final String email = user?.email ?? '';
-    final String inicial = email.isNotEmpty
-        ? email.substring(0, 1).toUpperCase()
-        : "V";
 
     final logout = () async {
       await auth.logout();
@@ -85,46 +80,27 @@ class _HomePageState extends State<HomePage> {
       key: _scaffoldKey,
       extendBodyBehindAppBar: true,
       drawer: Drawer(
-        backgroundColor: const Color(0xFF0F172A).withValues(alpha: 0.96),
+        backgroundColor: Colors.black,
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 28,
-                      backgroundColor: const Color(0xFF2575FC),
-                      child: Text(
-                        inicial,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 24,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        user?.displayName ?? '',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 15,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
+                Center(
+                  child: Image.asset(
+                    'assets/images/logoNuevo.png',
+                    height: 100,
+                  ),
                 ),
                 const SizedBox(height: 24),
                 const Divider(color: Colors.white24),
                 const SizedBox(height: 8),
                 ListTile(
-                  leading: const Icon(LucideIcons.palette, color: Colors.white),
+                  leading: const FaIcon(
+                    FontAwesomeIcons.paintBrush,
+                    color: Colors.blueAccent,
+                  ),
                   title: const Text(
                     'Diseños',
                     style: TextStyle(color: Colors.white),
@@ -135,7 +111,10 @@ class _HomePageState extends State<HomePage> {
                   },
                 ),
                 ListTile(
-                  leading: const Icon(LucideIcons.sticker, color: Colors.white),
+                  leading: const FaIcon(
+                    FontAwesomeIcons.moneyBillTrendUp,
+                    color: Colors.greenAccent,
+                  ),
                   title: const Text(
                     'Ventas',
                     style: TextStyle(color: Colors.white),
@@ -146,7 +125,10 @@ class _HomePageState extends State<HomePage> {
                   },
                 ),
                 ListTile(
-                  leading: const Icon(LucideIcons.users, color: Colors.white),
+                  leading: const FaIcon(
+                    FontAwesomeIcons.users,
+                    color: Colors.orangeAccent,
+                  ),
                   title: const Text(
                     'Clientes',
                     style: TextStyle(color: Colors.white),
@@ -161,9 +143,9 @@ class _HomePageState extends State<HomePage> {
                 const Divider(color: Colors.white24),
 
                 ListTile(
-                  leading: const Icon(
-                    Icons.info_outline_rounded,
-                    color: Colors.white,
+                  leading: const FaIcon(
+                    FontAwesomeIcons.circleInfo,
+                    color: Colors.blueGrey,
                   ),
                   title: const Text(
                     'Acerca de',
@@ -172,6 +154,7 @@ class _HomePageState extends State<HomePage> {
                   onTap: () {
                     showDialog(
                       context: context,
+
                       builder: (context) {
                         return AlertDialog(
                           backgroundColor: const Color(0xFF121212),
@@ -189,7 +172,7 @@ class _HomePageState extends State<HomePage> {
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(20),
                                 child: Image.asset(
-                                  'assets/images/Verts.png',
+                                  'assets/images/logoInfo.png',
                                   width: 150,
                                   height: 150,
                                   fit: BoxFit.cover,
@@ -212,7 +195,7 @@ class _HomePageState extends State<HomePage> {
 
                               // VERSIÓN
                               const Text(
-                                'Versión 1.0.2',
+                                'Versión 1.0.3',
                                 style: TextStyle(
                                   color: Colors.white70,
                                   fontSize: 17,
@@ -226,9 +209,9 @@ class _HomePageState extends State<HomePage> {
                   },
                 ),
                 ListTile(
-                  leading: const Icon(
-                    Icons.logout_rounded,
-                    color: Colors.white,
+                  leading: const FaIcon(
+                    FontAwesomeIcons.signOutAlt,
+                    color: Colors.redAccent,
                   ),
                   title: const Text(
                     'Cerrar sesión',
@@ -250,7 +233,7 @@ class _HomePageState extends State<HomePage> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(24),
                 image: const DecorationImage(
-                  image: AssetImage('assets/images/Banner.png'),
+                  image: AssetImage('assets/images/logoNuevo.png'),
                   fit: BoxFit.contain,
                   alignment: Alignment.center,
                 ),
