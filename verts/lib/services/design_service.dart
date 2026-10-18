@@ -10,6 +10,8 @@ class DesignService {
   final FirebaseStorage _storage = FirebaseStorage.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  String? categoriaSeleccionada;
+
   /// GUARDAR DISEÑO
   Future<void> saveDesign({
     required String nombre,
@@ -38,6 +40,7 @@ class DesignService {
       precio: precio,
       disponible: disponible,
       publicado: publicado,
+      categoria: categoriaSeleccionada ?? '',
       uid: currentUser.uid,
     );
 
@@ -68,6 +71,7 @@ class DesignService {
     required String id,
     required String nombre,
     required double precio,
+    required String categoria,
     required bool disponible,
     required bool publicado,
     required String imagenUrl,
@@ -88,6 +92,7 @@ class DesignService {
       'precio': precio,
       'disponible': disponible,
       'publicado': publicado,
+      'categoria': categoria,
       'fecha': FieldValue.serverTimestamp(),
     });
   }

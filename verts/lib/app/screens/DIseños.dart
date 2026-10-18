@@ -12,6 +12,7 @@ class DisenosPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final DesignService designService = DesignService();
+    designService.categoriaSeleccionada = null;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -97,6 +98,11 @@ class DisenosPage extends StatelessWidget {
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
+                  ),
+
+                  subtitle: Text(
+                    '${design.categoria}',
+                    style: const TextStyle(color: Colors.white70),
                   ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -232,6 +238,42 @@ class DisenosPage extends StatelessWidget {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 20),
+
+                    DropdownButtonFormField<String>(
+                      decoration: const InputDecoration(
+                        labelText: 'Categoría',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.category),
+                      ),
+                      value: design.categoria.isNotEmpty
+                          ? design.categoria
+                          : null,
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'Higway 35',
+                          child: Text('Higway 35'),
+                        ),
+                        DropdownMenuItem(value: 'Teku', child: Text('Teku')),
+                        DropdownMenuItem(
+                          value: 'Metal Maniacs',
+                          child: Text('Metal Maniacs'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Silencers',
+                          child: Text('Silencers'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Drones',
+                          child: Text('Drones'),
+                        ),
+
+                        DropdownMenuItem(value: 'Otros', child: Text('Otros')),
+                      ],
+                      onChanged: (String? value) {
+                        designService.categoriaSeleccionada = value;
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -261,6 +303,7 @@ class DisenosPage extends StatelessWidget {
                         id: design.id,
                         nombre: nombre,
                         precio: design.precio,
+                        categoria: designService.categoriaSeleccionada ?? '',
                         disponible: design.disponible,
                         publicado: design.publicado,
                         imagenUrl: imagenUrl,
@@ -384,6 +427,37 @@ class DisenosPage extends StatelessWidget {
                           ),
                         ),
                       ),
+                    ),
+
+                    DropdownButtonFormField<String>(
+                      decoration: const InputDecoration(
+                        labelText: 'Categoría',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.category),
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'Higway 35',
+                          child: Text('Higway 35'),
+                        ),
+                        DropdownMenuItem(value: 'Teku', child: Text('Teku')),
+                        DropdownMenuItem(
+                          value: 'Metal Maniacs',
+                          child: Text('Metal Maniacs'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Silencers',
+                          child: Text('Silencers'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Drones',
+                          child: Text('Drones'),
+                        ),
+                        DropdownMenuItem(value: 'Otros', child: Text('Otros')),
+                      ],
+                      onChanged: (value) {
+                        designService.categoriaSeleccionada = value;
+                      },
                     ),
                   ],
                 ),

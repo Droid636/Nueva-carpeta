@@ -7,6 +7,7 @@ class DesignModel {
   final double precio;
   final bool disponible;
   final bool publicado;
+  final String categoria;
   final DateTime? fecha;
   final String uid;
 
@@ -17,6 +18,7 @@ class DesignModel {
     required this.precio,
     required this.disponible,
     required this.publicado,
+    required this.categoria,
     this.fecha,
     required this.uid,
   });
@@ -35,6 +37,7 @@ class DesignModel {
       publicado: data['publicado'] ?? true,
       fecha: (data['fecha'] as Timestamp?)?.toDate(),
       uid: data['uid'] ?? '',
+      categoria: data['categoria'] ?? '',
     );
   }
 
@@ -47,6 +50,7 @@ class DesignModel {
       'publicado': publicado,
       'uid': uid,
       'fecha': FieldValue.serverTimestamp(),
+      'categoria': categoria,
     };
   }
 }
