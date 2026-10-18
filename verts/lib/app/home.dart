@@ -195,7 +195,7 @@ class _HomePageState extends State<HomePage> {
 
                               // VERSIÓN
                               const Text(
-                                'Versión 1.0.3',
+                                'Versión 1.0.5',
                                 style: TextStyle(
                                   color: Colors.white70,
                                   fontSize: 17,

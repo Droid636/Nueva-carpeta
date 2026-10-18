@@ -9,6 +9,15 @@ import '../models/design_model.dart';
 class DisenosPage extends StatelessWidget {
   const DisenosPage({super.key});
 
+  static const List<String> _categorias = [
+    'Higway 35',
+    'Teku',
+    'Metal Maniacs',
+    'Silencers',
+    'Drones',
+    'Otros',
+  ];
+
   @override
   Widget build(BuildContext context) {
     final DesignService designService = DesignService();
@@ -57,79 +66,35 @@ class DisenosPage extends StatelessWidget {
             );
           }
 
-          return ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            itemCount: designs.length,
-            itemBuilder: (context, index) {
-              final design = designs[index];
+          final groupedDesigns = <String, List<DesignModel>>{};
+          for (final design in designs) {
+            final category = design.categoria.trim().isEmpty
+                ? 'Sin categoría'
+                : design.categoria.trim();
+            groupedDesigns.putIfAbsent(category, () => []).add(design);
+          }
 
-              return Container(
-                margin: const EdgeInsets.only(bottom: 15),
-                decoration: BoxDecoration(
-                  color: Colors.white10,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.all(12),
-                  leading: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.network(
-                      design.imagen,
-                      width: 70,
-                      height: 70,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const SizedBox(
-                          width: 70,
-                          height: 70,
-                          child: Center(
-                            child: Icon(
-                              Icons.image_not_supported_outlined,
-                              color: Colors.white70,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  title: Text(
-                    design.nombre,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+          final categories = [
+            ..._categorias.where(groupedDesigns.containsKey),
+            ...groupedDesigns.keys.where(
+              (category) =>
+                  !_categorias.contains(category) &&
+                  category != 'Sin categoría',
+            ),
+            if (groupedDesigns.containsKey('Sin categoría')) 'Sin categoría',
+          ];
 
-                  subtitle: Text(
-                    '${design.categoria}',
-                    style: const TextStyle(color: Colors.white70),
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(
-                          Icons.edit_outlined,
-                          color: Color(0xFF00D9FF),
-                        ),
-                        onPressed: () {
-                          _showEditDesignDialog(context, design);
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.delete_outline,
-                          color: Colors.redAccent,
-                        ),
-                        onPressed: () async {
-                          await designService.deleteDesign(design.id);
-                        },
-                      ),
-                    ],
-                  ),
+          return ListView(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            children: [
+              for (final category in categories)
+                _buildCategoryCarousel(
+                  context,
+                  category,
+                  groupedDesigns[category]!,
+                  designService,
                 ),
-              );
-            },
+            ],
           );
         },
       ),
@@ -151,6 +116,179 @@ class DisenosPage extends StatelessWidget {
     );
   }
 
+  Widget _buildCategoryCarousel(
+    BuildContext context,
+    String category,
+    List<DesignModel> designs,
+    DesignService designService,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    category,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Text(
+                  '${designs.length}',
+                  style: const TextStyle(color: Colors.white54),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 180,
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              scrollDirection: Axis.horizontal,
+              itemCount: designs.length,
+              separatorBuilder: (context, index) => const SizedBox(width: 12),
+              itemBuilder: (context, index) {
+                final design = designs[index];
+                return _buildDesignCard(context, design, designService);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDesignCard(
+    BuildContext context,
+    DesignModel design,
+    DesignService designService,
+  ) {
+    return SizedBox(
+      width: 200,
+
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF171717),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Colors.white10),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.network(
+                    design.imagen,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const ColoredBox(
+                        color: Colors.white10,
+                        child: Center(
+                          child: Icon(
+                            Icons.image_not_supported_outlined,
+                            color: Colors.white70,
+                            size: 36,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    height: 120,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withValues(alpha: 0.85),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 4,
+                    right: 4,
+                    child: Row(
+                      children: [
+                        _buildCardAction(
+                          icon: Icons.edit_outlined,
+                          color: const Color(0xFF00D9FF),
+                          backgroundColor: Colors.black54,
+                          onPressed: () =>
+                              _showEditDesignDialog(context, design),
+                        ),
+                        _buildCardAction(
+                          icon: Icons.delete_outline,
+                          color: Colors.amber,
+                          backgroundColor: Colors.black54,
+                          onPressed: () async {
+                            await designService.deleteDesign(design.id);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  Positioned(
+                    left: 22,
+                    right: 12,
+                    bottom: 12,
+                    child: Text(
+                      design.nombre,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        shadows: [Shadow(color: Colors.black, blurRadius: 15)],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCardAction({
+    required IconData icon,
+    required Color color,
+    required VoidCallback onPressed,
+    required Color backgroundColor,
+  }) {
+    return Material(
+      color: Colors.black54,
+      shape: const CircleBorder(),
+      child: IconButton(
+        constraints: const BoxConstraints.tightFor(width: 36, height: 36),
+        padding: EdgeInsets.zero,
+        icon: Icon(icon, color: color, size: 19),
+        onPressed: onPressed,
+      ),
+    );
+  }
+
   void _showEditDesignDialog(BuildContext context, DesignModel design) {
     final nombreController = TextEditingController(text: design.nombre);
     File? imagen;
@@ -158,6 +296,7 @@ class DisenosPage extends StatelessWidget {
 
     final picker = ImagePicker();
     final designService = DesignService();
+    designService.categoriaSeleccionada = design.categoria;
 
     showDialog(
       context: context,
@@ -244,6 +383,7 @@ class DisenosPage extends StatelessWidget {
                       decoration: const InputDecoration(
                         labelText: 'Categoría',
                         border: OutlineInputBorder(),
+                        labelStyle: const TextStyle(color: Colors.white70),
                         prefixIcon: Icon(Icons.category),
                       ),
                       value: design.categoria.isNotEmpty
@@ -303,7 +443,9 @@ class DisenosPage extends StatelessWidget {
                         id: design.id,
                         nombre: nombre,
                         precio: design.precio,
-                        categoria: designService.categoriaSeleccionada ?? '',
+                        categoria:
+                            designService.categoriaSeleccionada ??
+                            design.categoria,
                         disponible: design.disponible,
                         publicado: design.publicado,
                         imagenUrl: imagenUrl,
