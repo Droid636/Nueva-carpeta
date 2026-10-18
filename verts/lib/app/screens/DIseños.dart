@@ -570,7 +570,7 @@ class DisenosPage extends StatelessWidget {
                         ),
                       ),
                     ),
-
+                    const SizedBox(height: 20),
                     DropdownButtonFormField<String>(
                       decoration: const InputDecoration(
                         labelText: 'Categoría',

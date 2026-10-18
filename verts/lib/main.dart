@@ -6,7 +6,7 @@ import 'package:verts/app/clientes.dart';
 import 'package:verts/app/home.dart';
 import 'package:verts/app/register.dart';
 import 'package:verts/app/screens/DIse%C3%B1os.dart';
-import 'package:verts/app/screens/ventas.dart';
+import 'package:verts/app/screens/Ventas.dart';
 import 'package:verts/firebase_options.dart';
 import 'app/onboarding.dart';
 import 'app/login.dart';

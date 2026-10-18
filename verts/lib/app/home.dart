@@ -23,6 +23,10 @@ class _HomePageState extends State<HomePage> {
   late final DesignService _designService;
   late Stream<List<DesignModel>> _designStream;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  int _currentDesignIndex = 0;
+
+  final CarouselSliderController _carouselController =
+      CarouselSliderController();
 
   @override
   void initState() {
@@ -195,7 +199,7 @@ class _HomePageState extends State<HomePage> {
 
                               // VERSIÓN
                               const Text(
-                                'Versión 1.0.5',
+                                'Versión 1.0.6',
                                 style: TextStyle(
                                   color: Colors.white70,
                                   fontSize: 17,
@@ -347,89 +351,229 @@ class _HomePageState extends State<HomePage> {
                           ),
                         )
                       else
-                        CarouselSlider(
-                          options: CarouselOptions(
-                            height: 180,
-                            enlargeCenterPage: true,
-                            autoPlay: true,
-                            viewportFraction: 0.65,
-                          ),
-                          items: designs.map((design) {
-                            return Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(20),
+                        Column(
+                          children: [
+                            CarouselSlider(
+                              carouselController: _carouselController,
+                              options: CarouselOptions(
+                                height: 220,
+                                enlargeCenterPage: true,
+                                enlargeFactor: 0.15,
+                                autoPlay: true,
+                                autoPlayInterval: const Duration(seconds: 4),
+                                autoPlayAnimationDuration: const Duration(
+                                  milliseconds: 800,
+                                ),
+                                viewportFraction: 0.72,
+                                onPageChanged: (index, reason) {
+                                  setState(() {
+                                    _currentDesignIndex = index;
+                                  });
+                                },
                               ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(20),
-                                child: design.imagen.isNotEmpty
-                                    ? Image.network(
-                                        design.imagen,
-                                        fit: BoxFit.cover,
-                                        width: double.infinity,
-                                        loadingBuilder:
-                                            (context, child, loadingProgress) {
-                                              if (loadingProgress == null)
-                                                return child;
-                                              return Shimmer.fromColors(
-                                                baseColor: const Color(
-                                                  0xFFD3D3D3,
-                                                ),
-                                                highlightColor: const Color(
-                                                  0xFFEEEEEE,
-                                                ),
-                                                child: Container(
-                                                  width: double.infinity,
-                                                  decoration: BoxDecoration(
-                                                    color: const Color(
-                                                      0xFFD3D3D3,
-                                                    ),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          20,
-                                                        ),
-                                                  ),
-                                                ),
-                                              );
-                                            },
-                                        errorBuilder:
-                                            (context, error, stackTrace) {
-                                              return Container(
-                                                color: Colors.white.withValues(
-                                                  alpha: 0.08,
-                                                ),
-                                                child: const Center(
-                                                  child: Icon(
-                                                    Icons.broken_image_outlined,
-                                                    color: Colors.white70,
-                                                    size: 42,
-                                                  ),
-                                                ),
-                                              );
-                                            },
-                                      )
-                                    : Container(
-                                        color: Colors.white.withValues(
-                                          alpha: 0.08,
+                              items: designs.asMap().entries.map((entry) {
+                                final design = entry.value;
+
+                                return Container(
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 5,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(22),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.30,
                                         ),
-                                        child: const Center(
-                                          child: Icon(
-                                            Icons.image_not_supported_outlined,
-                                            color: Colors.white70,
-                                            size: 42,
+                                        blurRadius: 18,
+                                        offset: const Offset(0, 8),
+                                      ),
+                                    ],
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(22),
+                                    child: Stack(
+                                      fit: StackFit.expand,
+                                      children: [
+                                        // Imagen del diseño
+                                        if (design.imagen.isNotEmpty)
+                                          Image.network(
+                                            design.imagen,
+                                            fit: BoxFit.cover,
+                                            loadingBuilder:
+                                                (
+                                                  context,
+                                                  child,
+                                                  loadingProgress,
+                                                ) {
+                                                  if (loadingProgress == null) {
+                                                    return child;
+                                                  }
+
+                                                  return Shimmer.fromColors(
+                                                    baseColor: const Color(
+                                                      0xFF252525,
+                                                    ),
+                                                    highlightColor: const Color(
+                                                      0xFF454545,
+                                                    ),
+                                                    child: Container(
+                                                      color: const Color(
+                                                        0xFF252525,
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                            errorBuilder:
+                                                (context, error, stackTrace) {
+                                                  return Container(
+                                                    color: const Color(
+                                                      0xFF202020,
+                                                    ),
+                                                    child: const Center(
+                                                      child: Icon(
+                                                        Icons
+                                                            .broken_image_outlined,
+                                                        color: Colors.white54,
+                                                        size: 42,
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                          )
+                                        else
+                                          Container(
+                                            color: const Color(0xFF202020),
+                                            child: const Center(
+                                              child: Icon(
+                                                Icons
+                                                    .image_not_supported_outlined,
+                                                color: Colors.white54,
+                                                size: 42,
+                                              ),
+                                            ),
+                                          ),
+
+                                        // Degradado para mejorar la lectura del nombre
+                                        DecoratedBox(
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              begin: Alignment.topCenter,
+                                              end: Alignment.bottomCenter,
+                                              colors: [
+                                                Colors.transparent,
+                                                Colors.black.withValues(
+                                                  alpha: 0.10,
+                                                ),
+                                                Colors.black.withValues(
+                                                  alpha: 0.88,
+                                                ),
+                                              ],
+                                              stops: const [0.35, 0.58, 1.0],
+                                            ),
                                           ),
                                         ),
-                                      ),
-                              ),
-                            );
-                          }).toList(),
+
+                                        // Nombre del diseño
+                                        Positioned(
+                                          left: 16,
+                                          right: 12,
+                                          bottom: 16,
+                                          child: Row(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.end,
+                                            children: [
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Text(
+                                                      '${design.categoria}',
+                                                      style: TextStyle(
+                                                        color: Colors.white
+                                                            .withValues(
+                                                              alpha: 0.75,
+                                                            ),
+                                                        fontSize: 9,
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                        letterSpacing: 1.5,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 5),
+                                                    Text(
+                                                      design.nombre,
+                                                      maxLines: 2,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 17,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        height: 1.15,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            // Indicadores del carrusel
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: designs.asMap().entries.map((entry) {
+                                final isSelected =
+                                    _currentDesignIndex == entry.key;
+
+                                return GestureDetector(
+                                  onTap: () {
+                                    _carouselController.animateToPage(
+                                      entry.key,
+                                    );
+                                  },
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 300),
+                                    curve: Curves.easeInOut,
+                                    width: isSelected ? 26 : 7,
+                                    height: 7,
+                                    margin: const EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isSelected
+                                          ? const Color(0xFF2575FC)
+                                          : Colors.white.withValues(
+                                              alpha: 0.25,
+                                            ),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ],
                         ),
 
-                      const SizedBox(height: 40),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text(
-                            'Venta de diseños',
+                            'Ventas',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 22,
@@ -604,6 +748,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
+
+extension on List<DesignModel> {}
 
 class _SalesGaugePainter extends CustomPainter {
   final double progress;
