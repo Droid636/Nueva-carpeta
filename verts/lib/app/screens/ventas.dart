@@ -17,6 +17,10 @@ class _VentasPageState extends State<VentasPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final TextEditingController _clienteController = TextEditingController();
   final TextEditingController _precioController = TextEditingController();
+  final TextEditingController _descripcionCostoExtraController =
+      TextEditingController();
+  final TextEditingController _costoExtraController =
+      TextEditingController();
 
   List<DesignModel> _designs = [];
   List<VentaModel> _ventas = [];
@@ -25,6 +29,7 @@ class _VentasPageState extends State<VentasPage> {
   String _errorMessage = '';
   String? _selectedDesignId;
   DateTime _fechaVenta = DateTime.now();
+  bool _tieneCostoExtra = false;
 
   @override
   void initState() {
@@ -93,7 +98,7 @@ class _VentasPageState extends State<VentasPage> {
           (venta) =>
               venta.fecha.year == now.year && venta.fecha.month == now.month,
         )
-        .fold<double>(0, (sum, venta) => sum + venta.precioVenta);
+        .fold<double>(0, (sum, venta) => sum + venta.gananciaNeta);
   }
 
   Future<void> _eliminarVenta(VentaModel venta) async {
@@ -142,10 +147,10 @@ class _VentasPageState extends State<VentasPage> {
   Future<void> _guardarVenta() async {
     final cliente = _clienteController.text.trim();
     final precio = double.tryParse(_precioController.text.trim()) ?? 0;
-    final designSeleccionado = _designs.firstWhere(
-      (design) => design.id == _selectedDesignId,
-      orElse: () => _designs.first,
-    );
+    final descripcionCostoExtra = _descripcionCostoExtraController.text.trim();
+    final costoExtra = _tieneCostoExtra
+        ? double.tryParse(_costoExtraController.text.trim()) ?? 0
+        : 0.0;
 
     if (_selectedDesignId == null || cliente.isEmpty || precio <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -155,6 +160,27 @@ class _VentasPageState extends State<VentasPage> {
       );
       return;
     }
+
+    if (_tieneCostoExtra &&
+        (descripcionCostoExtra.isEmpty || costoExtra <= 0)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Indica el concepto del costo extra y un monto válido'),
+        ),
+      );
+      return;
+    }
+
+    if (_designs.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Primero registra un diseño')),
+      );
+      return;
+    }
+
+    final designSeleccionado = _designs.firstWhere(
+      (design) => design.id == _selectedDesignId,
+    );
 
     final currentUser = _auth.currentUser;
     if (currentUser == null) {
@@ -170,6 +196,9 @@ class _VentasPageState extends State<VentasPage> {
       nombreDiseno: designSeleccionado.nombre,
       cliente: cliente,
       precioVenta: precio,
+      tieneCostoExtra: _tieneCostoExtra,
+      descripcionCostoExtra: _tieneCostoExtra ? descripcionCostoExtra : '',
+      costoExtra: costoExtra,
       fecha: _fechaVenta,
       uid: currentUser.uid,
     );
@@ -178,6 +207,9 @@ class _VentasPageState extends State<VentasPage> {
 
     _clienteController.clear();
     _precioController.clear();
+    _descripcionCostoExtraController.clear();
+    _costoExtraController.clear();
+    _tieneCostoExtra = false;
     _fechaVenta = DateTime.now();
 
     await _cargarDatos();
@@ -193,6 +225,8 @@ class _VentasPageState extends State<VentasPage> {
   void dispose() {
     _clienteController.dispose();
     _precioController.dispose();
+    _descripcionCostoExtraController.dispose();
+    _costoExtraController.dispose();
     super.dispose();
   }
 
@@ -331,6 +365,59 @@ class _VentasPageState extends State<VentasPage> {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  SwitchListTile(
+                    value: _tieneCostoExtra,
+                    onChanged: (value) {
+                      setState(() {
+                        _tieneCostoExtra = value;
+                      });
+                    },
+                    title: const Text(
+                      '¿Hubo un costo extra en esta venta?',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    subtitle: const Text(
+                      'Actívalo solo si aplica para esta venta',
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                    activeThumbColor: const Color(0xFF00D9FF),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                  ),
+                  if (_tieneCostoExtra) ...[
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _descripcionCostoExtraController,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        labelText: 'Concepto del costo extra',
+                        labelStyle: const TextStyle(color: Colors.white70),
+                        filled: true,
+                        fillColor: Colors.white10,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _costoExtraController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        labelText: 'Monto del costo extra',
+                        prefixText: '\$ ',
+                        labelStyle: const TextStyle(color: Colors.white70),
+                        filled: true,
+                        fillColor: Colors.white10,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   ListTile(
                     tileColor: Colors.white10,
@@ -439,6 +526,21 @@ class _VentasPageState extends State<VentasPage> {
                                         color: Colors.white70,
                                       ),
                                     ),
+                                    if (venta.tieneCostoExtra) ...[
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Costo extra: ${venta.descripcionCostoExtra}',
+                                        style: const TextStyle(
+                                          color: Colors.white70,
+                                        ),
+                                      ),
+                                      Text(
+                                        'Monto: \$${venta.costoExtra.toStringAsFixed(2)}',
+                                        style: const TextStyle(
+                                          color: Colors.orangeAccent,
+                                        ),
+                                      ),
+                                    ],
                                     const SizedBox(height: 4),
                                     Text(
                                       DateFormat(
@@ -455,11 +557,19 @@ class _VentasPageState extends State<VentasPage> {
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   Text(
-                                    '\$${venta.precioVenta.toStringAsFixed(2)}',
+                                    'Venta: \$${venta.precioVenta.toStringAsFixed(2)}',
                                     style: const TextStyle(
                                       color: Color(0xFF00D9FF),
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 16,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Neto: \$${venta.gananciaNeta.toStringAsFixed(2)}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                   const SizedBox(height: 8),
