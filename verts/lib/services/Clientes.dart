@@ -9,7 +9,8 @@ class ClientesService {
   /// GUARDAR CLIENTE
   Future<void> saveCliente({
     required String nombre,
-    required int telefono,
+    required String apellidos,
+    required String telefono,
     required bool actividad,
   }) async {
     final currentUser = _auth.currentUser;
@@ -20,6 +21,7 @@ class ClientesService {
     final cliente = Clientes(
       id: '',
       nombre: nombre,
+      apellidos: apellidos,
       telefono: telefono,
       actividad: actividad,
       uid: currentUser.uid,
@@ -50,7 +52,8 @@ class ClientesService {
   Future<void> updateCliente({
     required String id,
     required String nombre,
-    required int telefono,
+    required String apellidos,
+    required String telefono,
     required bool actividad,
   }) async {
     final currentUser = _auth.currentUser;
@@ -62,6 +65,7 @@ class ClientesService {
 
     await clienteRef.update({
       'nombre': nombre,
+      'apellidos': apellidos,
       'telefono': telefono,
       'actividad': actividad,
       'uid': currentUser.uid,

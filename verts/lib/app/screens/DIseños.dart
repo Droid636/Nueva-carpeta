@@ -27,14 +27,15 @@ class DisenosPage extends StatelessWidget {
       backgroundColor: Colors.black,
 
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.black,
         elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
-          'MIS DISEÑOS',
+          'Diseños',
           style: TextStyle(
-            fontWeight: FontWeight.bold,
-            letterSpacing: 2,
             color: Colors.white,
+            letterSpacing: 2,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ),

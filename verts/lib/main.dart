@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:verts/app/clientes.dart';
+import 'package:verts/app/screens/Clientes.dart';
 import 'package:verts/app/home.dart';
 import 'package:verts/app/register.dart';
 import 'package:verts/app/screens/DIse%C3%B1os.dart';
@@ -229,7 +229,7 @@ class _StartupErrorScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF090909),
+      backgroundColor: Colors.black,
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),

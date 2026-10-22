@@ -19,8 +19,7 @@ class _VentasPageState extends State<VentasPage> {
   final TextEditingController _precioController = TextEditingController();
   final TextEditingController _descripcionCostoExtraController =
       TextEditingController();
-  final TextEditingController _costoExtraController =
-      TextEditingController();
+  final TextEditingController _costoExtraController = TextEditingController();
 
   List<DesignModel> _designs = [];
   List<VentaModel> _ventas = [];
@@ -235,14 +234,15 @@ class _VentasPageState extends State<VentasPage> {
     return Scaffold(
       backgroundColor: const Color(0xFF0B1020),
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.black,
         elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
-          'VENTAS',
+          'Ventas',
           style: TextStyle(
             color: Colors.white,
-            fontWeight: FontWeight.bold,
             letterSpacing: 2,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ),
