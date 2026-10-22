@@ -326,13 +326,10 @@ class _HomePageState extends State<HomePage> {
                             onPressed: () {
                               Navigator.pushNamed(context, '/disenos');
                             },
-                            child: const Text(
-                              'Ver más',
-                              style: TextStyle(
-                                decoration: TextDecoration.underline,
-                                color: Color(0xFF00D9FF),
-                                fontWeight: FontWeight.w600,
-                              ),
+                            child: const Icon(
+                              Icons.arrow_forward_rounded,
+                              color: Color(0xFF00D9FF),
+                              size: 28,
                             ),
                           ),
                         ],
@@ -584,13 +581,10 @@ class _HomePageState extends State<HomePage> {
                             onPressed: () {
                               Navigator.pushNamed(context, '/ventas');
                             },
-                            child: const Text(
-                              'Ver más',
-                              style: TextStyle(
-                                decoration: TextDecoration.underline,
-                                color: Color(0xFF00D9FF),
-                                fontWeight: FontWeight.w600,
-                              ),
+                            child: const Icon(
+                              Icons.arrow_forward_rounded,
+                              color: Color(0xFF00D9FF),
+                              size: 28,
                             ),
                           ),
                         ],

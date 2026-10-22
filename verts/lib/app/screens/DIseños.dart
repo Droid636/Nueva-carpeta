@@ -24,10 +24,10 @@ class DisenosPage extends StatelessWidget {
     designService.categoriaSeleccionada = null;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Color(0xFF0B1020),
 
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: Color(0xFF0B1020),
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(

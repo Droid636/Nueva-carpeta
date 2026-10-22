@@ -232,9 +232,9 @@ class _VentasPageState extends State<VentasPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0B1020),
+      backgroundColor: Color(0xFF0B1020),
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: Color(0xFF0B1020),
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
