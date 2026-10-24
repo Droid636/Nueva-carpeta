@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../app/models/Clientes.dart';
+import '../app/models/ventas_model.dart';
 
 class ClientesService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -45,6 +46,23 @@ class ClientesService {
         .map(
           (snapshot) =>
               snapshot.docs.map((doc) => Clientes.fromFirestore(doc)).toList(),
+        );
+  }
+
+  Stream<List<VentaModel>> getVentas() {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) {
+      return Stream.value([]);
+    }
+
+    return _firestore
+        .collection('ventas')
+        .where('uid', isEqualTo: currentUser.uid)
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => VentaModel.fromFirestore(doc))
+              .toList(),
         );
   }
 

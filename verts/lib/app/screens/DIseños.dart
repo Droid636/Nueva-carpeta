@@ -6,9 +6,14 @@ import 'package:image_picker/image_picker.dart';
 import '../../services/design_service.dart';
 import '../models/design_model.dart';
 
-class DisenosPage extends StatelessWidget {
+class DisenosPage extends StatefulWidget {
   const DisenosPage({super.key});
 
+  @override
+  State<DisenosPage> createState() => _DisenosPageState();
+}
+
+class _DisenosPageState extends State<DisenosPage> {
   static const List<String> _categorias = [
     'Higway 35',
     'Teku',
@@ -17,6 +22,8 @@ class DisenosPage extends StatelessWidget {
     'Drones',
     'Otros',
   ];
+
+  final Set<String> _categoriasContraidas = {};
 
   @override
   Widget build(BuildContext context) {
@@ -123,45 +130,79 @@ class DisenosPage extends StatelessWidget {
     List<DesignModel> designs,
     DesignService designService,
   ) {
+    final contraida = _categoriasContraidas.contains(category);
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    category,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+          InkWell(
+            onTap: () {
+              setState(() {
+                if (contraida) {
+                  _categoriasContraidas.remove(category);
+                } else {
+                  _categoriasContraidas.add(category);
+                }
+              });
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      category,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ),
-                Text(
-                  '${designs.length}',
-                  style: const TextStyle(color: Colors.white54),
-                ),
-              ],
+                  Text(
+                    '${designs.length}',
+                    style: const TextStyle(color: Colors.white54),
+                  ),
+                  const SizedBox(width: 6),
+                  Icon(
+                    contraida ? Icons.expand_more : Icons.expand_less,
+                    color: Colors.white70,
+                  ),
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 180,
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              scrollDirection: Axis.horizontal,
-              itemCount: designs.length,
-              separatorBuilder: (context, index) => const SizedBox(width: 12),
-              itemBuilder: (context, index) {
-                final design = designs[index];
-                return _buildDesignCard(context, design, designService);
-              },
-            ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            child: contraida
+                ? const SizedBox(width: double.infinity)
+                : Column(
+                    children: [
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: 180,
+                        child: ListView.separated(
+                          padding: const EdgeInsets.symmetric(horizontal: 18),
+                          scrollDirection: Axis.horizontal,
+                          itemCount: designs.length,
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(width: 12),
+                          itemBuilder: (context, index) {
+                            final design = designs[index];
+                            return _buildDesignCard(
+                              context,
+                              design,
+                              designService,
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
           ),
         ],
       ),

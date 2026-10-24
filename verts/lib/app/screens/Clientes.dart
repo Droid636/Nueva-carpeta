@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:verts/app/models/Clientes.dart';
+import 'package:verts/app/models/ventas_model.dart';
 import 'package:verts/services/Clientes.dart';
 
-class ClientesPage extends StatelessWidget {
+class ClientesPage extends StatefulWidget {
   ClientesPage({super.key});
 
+  @override
+  State<ClientesPage> createState() => _ClientesPageState();
+}
+
+class _ClientesPageState extends State<ClientesPage> {
   static const _background = Color(0xFF0B1020);
   static const _surface = Color(0xFF111827);
   static const _muted = Color(0xFF94A3B8);
@@ -12,6 +18,7 @@ class ClientesPage extends StatelessWidget {
   static const _blue = Color(0xFF2575FC);
 
   final ClientesService _clientesService = ClientesService();
+  final Set<String> _clientesConComprasAbiertas = {};
 
   @override
   Widget build(BuildContext context) {
@@ -45,37 +52,66 @@ class ClientesPage extends StatelessWidget {
           final clientes = snapshot.data ?? const <Clientes>[];
           final activos = clientes.where((cliente) => cliente.actividad).length;
 
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 104),
-            children: [
-              const SizedBox(height: 8),
+          return StreamBuilder<List<VentaModel>>(
+            stream: _clientesService.getVentas(),
+            builder: (context, ventasSnapshot) {
+              if (ventasSnapshot.hasError) {
+                return _buildErrorState(ventasSnapshot.error);
+              }
 
-              _buildSummaryCard(clientes.length, activos),
-              const SizedBox(height: 28),
-              Row(
+              if (!ventasSnapshot.hasData) {
+                return const Center(
+                  child: CircularProgressIndicator(color: _cyan),
+                );
+              }
+
+              final ventas = ventasSnapshot.data!;
+              return ListView(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 104),
                 children: [
-                  const Expanded(
-                    child: Text(
-                      'Directorio',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 19,
-                        fontWeight: FontWeight.w700,
+                  const SizedBox(height: 8),
+                  _buildSummaryCard(clientes.length, activos),
+                  const SizedBox(height: 28),
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Directorio',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 19,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
-                    ),
+                      _CountBadge(count: clientes.length),
+                    ],
                   ),
-                  _CountBadge(count: clientes.length),
+                  const SizedBox(height: 14),
+                  if (clientes.isEmpty)
+                    _buildEmptyState(context)
+                  else
+                    for (final cliente in clientes) ...[
+                      _buildClienteCard(
+                        context,
+                        cliente,
+                        _ventasDelCliente(cliente, ventas),
+                        _clientesConComprasAbiertas.contains(cliente.id),
+                        () {
+                          setState(() {
+                            if (!_clientesConComprasAbiertas.remove(
+                              cliente.id,
+                            )) {
+                              _clientesConComprasAbiertas.add(cliente.id);
+                            }
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                 ],
-              ),
-              const SizedBox(height: 14),
-              if (clientes.isEmpty)
-                _buildEmptyState(context)
-              else
-                for (final cliente in clientes) ...[
-                  _buildClienteCard(context, cliente),
-                  const SizedBox(height: 12),
-                ],
-            ],
+              );
+            },
           );
         },
       ),
@@ -180,7 +216,32 @@ class ClientesPage extends StatelessWidget {
     );
   }
 
-  Widget _buildClienteCard(BuildContext context, Clientes cliente) {
+  List<VentaModel> _ventasDelCliente(
+    Clientes cliente,
+    List<VentaModel> ventas,
+  ) {
+    final nombreCompleto = '${cliente.nombre} ${cliente.apellidos}'
+        .trim()
+        .toLowerCase();
+
+    return ventas
+        .where(
+          (venta) =>
+              venta.clienteId == cliente.id ||
+              (nombreCompleto.isNotEmpty &&
+                  venta.clienteId.isEmpty &&
+                  venta.cliente.trim().toLowerCase() == nombreCompleto),
+        )
+        .toList();
+  }
+
+  Widget _buildClienteCard(
+    BuildContext context,
+    Clientes cliente,
+    List<VentaModel> compras,
+    bool comprasAbiertas,
+    VoidCallback onToggleCompras,
+  ) {
     final nombreCompleto = '${cliente.nombre} ${cliente.apellidos}'.trim();
     final nombreParaAvatar = cliente.nombre.trim();
     final inicial = nombreParaAvatar.isEmpty
@@ -194,76 +255,154 @@ class ClientesPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.white.withOpacity(0.055)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [_cyan.withOpacity(0.22), _blue.withOpacity(0.30)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(17),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              inicial,
-              style: const TextStyle(
-                color: _cyan,
-                fontSize: 21,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  nombreCompleto.isEmpty ? 'Sin nombre' : nombreCompleto,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+          Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [_cyan.withOpacity(0.22), _blue.withOpacity(0.30)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(17),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  inicial,
                   style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
+                    color: _cyan,
+                    fontSize: 21,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
-                const SizedBox(height: 7),
-                Row(
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.phone_rounded, size: 14, color: _muted),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        cliente.telefono.isEmpty
-                            ? 'Sin teléfono'
-                            : cliente.telefono,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: _muted, fontSize: 12),
+                    Text(
+                      nombreCompleto.isEmpty ? 'Sin nombre' : nombreCompleto,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
+                    const SizedBox(height: 7),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.phone_rounded,
+                          size: 14,
+                          color: _muted,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            cliente.telefono.isEmpty
+                                ? 'Sin teléfono'
+                                : cliente.telefono,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: _muted, fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    _StatusBadge(isActive: cliente.actividad),
                   ],
                 ),
-                const SizedBox(height: 10),
-                _StatusBadge(isActive: cliente.actividad),
-              ],
+              ),
+              const SizedBox(width: 4),
+              IconButton(
+                tooltip: 'Eliminar cliente',
+                onPressed: () => _confirmarEliminacion(context, cliente),
+                icon: const Icon(Icons.delete_outline_rounded),
+                color: const Color(0xFFFF7A7A),
+                style: IconButton.styleFrom(
+                  backgroundColor: const Color(0xFFFF5A5F).withOpacity(0.10),
+                ),
+              ),
+            ],
+          ),
+          InkWell(
+            onTap: onToggleCompras,
+            borderRadius: BorderRadius.circular(10),
+            child: Padding(
+              padding: const EdgeInsets.only(top: 14, bottom: 4),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Diseños comprados (${compras.length})',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    comprasAbiertas ? Icons.expand_less : Icons.expand_more,
+                    color: Colors.white70,
+                  ),
+                ],
+              ),
             ),
           ),
-          const SizedBox(width: 4),
-
-          IconButton(
-            tooltip: 'Eliminar cliente',
-            onPressed: () => _confirmarEliminacion(context, cliente),
-            icon: const Icon(Icons.delete_outline_rounded),
-            color: const Color(0xFFFF7A7A),
-            style: IconButton.styleFrom(
-              backgroundColor: const Color(0xFFFF5A5F).withOpacity(0.10),
-            ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            child: comprasAbiertas
+                ? Padding(
+                    padding: const EdgeInsets.only(top: 7),
+                    child: compras.isEmpty
+                        ? const Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Sin compras registradas',
+                              style: TextStyle(color: _muted, fontSize: 12),
+                            ),
+                          )
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              for (final compra in compras)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 5),
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.checkroom_rounded,
+                                        color: _cyan,
+                                        size: 15,
+                                      ),
+                                      const SizedBox(width: 7),
+                                      Expanded(
+                                        child: Text(
+                                          compra.nombreDiseno,
+                                          style: const TextStyle(
+                                            color: _muted,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          ),
+                  )
+                : const SizedBox(width: double.infinity),
           ),
         ],
       ),
@@ -540,11 +679,6 @@ class _AddClienteDialogState extends State<_AddClienteDialog> {
             'Nuevo cliente',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
           ),
-          SizedBox(height: 5),
-          Text(
-            'Completa sus datos de contacto.',
-            style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
-          ),
         ],
       ),
       content: SingleChildScrollView(
@@ -582,10 +716,7 @@ class _AddClienteDialogState extends State<_AddClienteDialog> {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              subtitle: const Text(
-                'Puedes cambiar este estado más adelante.',
-                style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
-              ),
+
               value: _actividad,
               activeThumbColor: _accent,
               onChanged: _guardando
@@ -622,7 +753,7 @@ class _AddClienteDialogState extends State<_AddClienteDialog> {
                   ),
                 )
               : const Icon(Icons.check_rounded, size: 18),
-          label: Text(_guardando ? 'Guardando' : 'Guardar cliente'),
+          label: Text(_guardando ? 'Guardando' : 'Guardar'),
         ),
       ],
     );

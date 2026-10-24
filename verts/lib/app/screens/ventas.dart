@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:verts/app/models/Clientes.dart';
 import 'package:verts/app/models/design_model.dart';
 import 'package:verts/app/models/ventas_model.dart';
 
@@ -15,7 +16,6 @@ class VentasPage extends StatefulWidget {
 class _VentasPageState extends State<VentasPage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final TextEditingController _clienteController = TextEditingController();
   final TextEditingController _precioController = TextEditingController();
   final TextEditingController _descripcionCostoExtraController =
       TextEditingController();
@@ -23,10 +23,12 @@ class _VentasPageState extends State<VentasPage> {
 
   List<DesignModel> _designs = [];
   List<VentaModel> _ventas = [];
+  List<Clientes> _clientes = [];
   bool _loading = true;
   bool _hasError = false;
   String _errorMessage = '';
   String? _selectedDesignId;
+  String? _selectedClientId;
   DateTime _fechaVenta = DateTime.now();
   bool _tieneCostoExtra = false;
 
@@ -54,6 +56,15 @@ class _VentasPageState extends State<VentasPage> {
           .map((doc) => DesignModel.fromFirestore(doc))
           .toList();
 
+      final clientesSnapshot = await _firestore
+          .collection('clientes')
+          .where('uid', isEqualTo: currentUser.uid)
+          .get();
+
+      final clientes = clientesSnapshot.docs
+          .map((doc) => Clientes.fromFirestore(doc))
+          .toList();
+
       final ventasSnapshot = await FirebaseFirestore.instance
           .collection('ventas')
           .where('uid', isEqualTo: currentUser.uid)
@@ -68,6 +79,7 @@ class _VentasPageState extends State<VentasPage> {
 
       setState(() {
         _designs = designs;
+        _clientes = clientes;
         _ventas = ventas;
         _loading = false;
         _hasError = false;
@@ -77,6 +89,11 @@ class _VentasPageState extends State<VentasPage> {
             (_selectedDesignId == null ||
                 !_designs.any((design) => design.id == _selectedDesignId))) {
           _selectedDesignId = _designs.first.id;
+        }
+
+        if (_selectedClientId != null &&
+            !_clientes.any((cliente) => cliente.id == _selectedClientId)) {
+          _selectedClientId = null;
         }
       });
     } catch (e) {
@@ -144,14 +161,21 @@ class _VentasPageState extends State<VentasPage> {
   }
 
   Future<void> _guardarVenta() async {
-    final cliente = _clienteController.text.trim();
+    final clientesSeleccionados = _clientes.where(
+      (cliente) => cliente.id == _selectedClientId,
+    );
+    final clienteSeleccionado = clientesSeleccionados.isEmpty
+        ? null
+        : clientesSeleccionados.first;
     final precio = double.tryParse(_precioController.text.trim()) ?? 0;
     final descripcionCostoExtra = _descripcionCostoExtraController.text.trim();
     final costoExtra = _tieneCostoExtra
         ? double.tryParse(_costoExtraController.text.trim()) ?? 0
         : 0.0;
 
-    if (_selectedDesignId == null || cliente.isEmpty || precio <= 0) {
+    if (_selectedDesignId == null ||
+        clienteSeleccionado == null ||
+        precio <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Completa cliente, diseño y precio válido'),
@@ -193,7 +217,10 @@ class _VentasPageState extends State<VentasPage> {
       id: '',
       designId: designSeleccionado.id,
       nombreDiseno: designSeleccionado.nombre,
-      cliente: cliente,
+      clienteId: clienteSeleccionado.id,
+      cliente:
+          '${clienteSeleccionado.nombre} ${clienteSeleccionado.apellidos}'
+              .trim(),
       precioVenta: precio,
       tieneCostoExtra: _tieneCostoExtra,
       descripcionCostoExtra: _tieneCostoExtra ? descripcionCostoExtra : '',
@@ -204,7 +231,7 @@ class _VentasPageState extends State<VentasPage> {
 
     await _firestore.collection('ventas').add(venta.toMap());
 
-    _clienteController.clear();
+    _selectedClientId = null;
     _precioController.clear();
     _descripcionCostoExtraController.clear();
     _costoExtraController.clear();
@@ -222,7 +249,6 @@ class _VentasPageState extends State<VentasPage> {
 
   @override
   void dispose() {
-    _clienteController.dispose();
     _precioController.dispose();
     _descripcionCostoExtraController.dispose();
     _costoExtraController.dispose();
@@ -334,9 +360,9 @@ class _VentasPageState extends State<VentasPage> {
                     },
                   ),
                   const SizedBox(height: 16),
-                  TextField(
-                    controller: _clienteController,
-                    style: const TextStyle(color: Colors.white),
+                  DropdownButtonFormField<String>(
+                    value: _selectedClientId,
+                    dropdownColor: const Color(0xFF111827),
                     decoration: InputDecoration(
                       labelText: 'Cliente',
                       labelStyle: const TextStyle(color: Colors.white70),
@@ -346,6 +372,24 @@ class _VentasPageState extends State<VentasPage> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                     ),
+                    style: const TextStyle(color: Colors.white),
+                    hint: const Text(
+                      'Selecciona un cliente',
+                      style: TextStyle(color: Colors.white54),
+                    ),
+                    items: _clientes.map((cliente) {
+                      return DropdownMenuItem<String>(
+                        value: cliente.id,
+                        child: Text(
+                          '${cliente.nombre} ${cliente.apellidos}'.trim(),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedClientId = value;
+                      });
+                    },
                   ),
                   const SizedBox(height: 16),
                   TextField(
@@ -377,10 +421,7 @@ class _VentasPageState extends State<VentasPage> {
                       '¿Hubo un costo extra en esta venta?',
                       style: TextStyle(color: Colors.white),
                     ),
-                    subtitle: const Text(
-                      'Actívalo solo si aplica para esta venta',
-                      style: TextStyle(color: Colors.white70),
-                    ),
+
                     activeThumbColor: const Color(0xFF00D9FF),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 8),
                   ),

@@ -4,6 +4,7 @@ class VentaModel {
   final String id;
   final String designId;
   final String nombreDiseno;
+  final String clienteId;
   final String cliente;
   final double precioVenta;
   final bool tieneCostoExtra;
@@ -16,6 +17,7 @@ class VentaModel {
     required this.id,
     required this.designId,
     required this.nombreDiseno,
+    this.clienteId = '',
     required this.cliente,
     required this.precioVenta,
     this.tieneCostoExtra = false,
@@ -34,6 +36,7 @@ class VentaModel {
       id: doc.id,
       designId: data['designId'] ?? '',
       nombreDiseno: data['nombreDiseno'] ?? '',
+      clienteId: data['clienteId'] ?? '',
       cliente: data['cliente'] ?? '',
       precioVenta: (data['precioVenta'] ?? 0).toDouble(),
       tieneCostoExtra: data['tieneCostoExtra'] ?? false,
@@ -48,6 +51,7 @@ class VentaModel {
     return {
       'designId': designId,
       'nombreDiseno': nombreDiseno,
+      'clienteId': clienteId,
       'cliente': cliente,
       'precioVenta': precioVenta,
       'tieneCostoExtra': tieneCostoExtra,
